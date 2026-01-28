@@ -1,0 +1,46 @@
+name: Ultimate-Win-CRD1
+
+on: 
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Download Chrome Installer
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://dl.google.com/chrome/install/latest/chrome_installer.exe" -OutFile "chrome_installer.exe"
+          Start-Process -FilePath "chrome_installer.exe" -Args "/silent /install" -Wait
+
+      - name: Download and Install CRD
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://dl.google.com/edgedl/chrome-remote-desktop/chromeremotedesktophost.msi" -OutFile "crd.msi"
+          Start-Process -FilePath "msiexec.exe" -Args "/i crd.msi /quiet /qn" -Wait
+
+      - name: Start Chrome Remote Desktop
+        shell: pwsh
+        env:
+          CRD_CODE: ${{ secrets.CRD_CODE1 }}
+          CRD_PIN: ${{ secrets.CRD_PIN }}
+        run: |
+          # تحديد مسار البرنامج
+          $exePath = "${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe"
+          
+          # تشغيل السيرفر مع الكود والرقم السري
+          & $exePath --code="$env:CRD_CODE" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$Env:COMPUTERNAME --pin=$env:CRD_PIN
+
+      - name: Success Message
+        shell: pwsh
+        run: |
+          Write-Host "======================================================"
+          Write-Host "✅ The Server is RUNNING!"
+          Write-Host "🔗 Go to: https://remotedesktop.google.com/access"
+          Write-Host "👉 Connect to the PC named 'WIN-...' using your PIN."
+          Write-Host "======================================================"
+
+      - name: Keep Alive
+        shell: pwsh
+        run: |
+          while ($true) { Start-Sleep -Seconds 300 }
